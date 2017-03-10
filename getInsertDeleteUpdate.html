@@ -1,0 +1,187 @@
+<!-- In this program, I am inserting the URL of GET method in studentService1. So the data is taken from that URL in the $http.get method.
+Further we go ahead and  -->
+
+
+
+<!DOCTYPE html>
+<html ng-app = "demoApp">
+<head>
+<meta charset="ISO-8859-1">
+<title>Insert title here</title>
+<style>
+table, th, td{
+border: 1px solid black;
+}
+
+</style>
+<script src="angular.min.js"></script>
+<script>
+var app = angular.module('demoApp',[]); 
+
+app.factory('getService', function($http){
+	var getStudents = {
+			getMethod: function(){
+				return $http.get('http://localhost:2316/MyFirstWebProject/rest/studentWeb/studentJSON');
+			},
+			postMethod: function(data){
+				return $http.post("http://localhost:2316/MyFirstWebProject/rest/studentWeb/insertStudentJSON",data);
+			}
+	}
+	return getStudents;
+});
+
+app.controller('getDetailsController', function($scope, getService,$http,$rootScope){
+	
+	$scope.Student = function(){
+		
+	var promise = getService.getMethod();
+	console.log(promise);
+	promise.then(function(response){
+		console.log("inside success");
+		console.log(response);
+		
+		
+		$scope.students = response.data;
+	});
+	}
+	
+	$scope.deleteFunc = function(){
+		var url = "http://localhost:2316/MyFirstWebProject/rest/studentWeb/delete?id="+$scope.selectedId;
+		console.log($scope.selectedId);
+		var promise = $http.delete("http://localhost:2316/MyFirstWebProject/rest/studentWeb/delete?id="+$scope.selectedId);
+		promise.then(function(data){
+			alert("deleted");
+			$scope.Student();
+		}, function(error){
+			alert("error")
+		});
+	}
+	
+	
+	$scope.update=function(){
+		var promise = $http.post("http://localhost:2316/MyFirstWebProject/rest/studentWeb/update", $scope.message);
+		promise.then(success);
+		function success(data,status, headers, config) {
+			
+			$scope.Student();
+			
+			
+		}
+	}
+	
+	
+	$scope.populate = function(){
+		$scope.message = {};
+		alert("getting called");
+		$scope.students.forEach(function(data,index){
+			if(data.id == $scope.selectedId){
+				console.log(data);
+//You can also simply put $scope.message = data; But the below way is deep cloning.				
+				$scope.message.name = data.name;
+				$scope.message.id = data.id;
+				$scope.message.age = data.age;
+				$scope.message.marks = data.marks;
+				
+				$rootScope.$broadcast("passingEvent",$scope.message);
+			}
+		});
+	}
+	
+	
+	
+});
+
+
+app.controller("insertController" ,function($scope,$http, getService) {
+    $scope.submitForm=function(){
+console.log($scope.message) ;
+        var promise= getService.postMethod($scope.message);
+        promise.then(success,error);
+        
+        function success(data, status, headers, config) {
+            $scope.message = data;
+        }
+        
+        function error(data, status, headers, config) {
+            alert( "error: " + status);
+        }
+
+        
+    }
+    
+    $scope.$on("passingEvent", function(event, args){
+    	$scope.message = args;
+    });
+});
+
+
+
+	
+	
+
+</script>
+</head>
+<body>
+
+
+
+<div ng-controller="getDetailsController">
+<button type="button" ng-click="Student()">click to Get</button>
+<table style="width:100%">
+
+<tr>
+<th>Name</th>
+<th>ID</th>
+<th>Age</th>
+<th>Marks</th>
+</tr>
+<tr ng-repeat="e in students">
+<td>{{e.name}}</td>
+<td>{{e.id}}</td>
+<td>{{e.age}}</td>
+<td>{{e.marks}}</td>
+</tr>
+</table>
+<br><br>
+
+<table>
+<tr> <td> Name</td><td>id</td> <td> Age</td> <td> Marks</td></tr>
+
+<tr ng-repeat="a in students">
+
+<td>{{a.name}}</td>
+
+<!-- ng-repeat will have the scope only within the tr. $parent will help give access or store selectedId in the controller -->
+<td><input type="radio" ng-model="$parent.selectedId" name="id" value="{{a.id}}"></td>
+<td>{{a.id}}</td>
+<td>{{a.age}}</td>
+<td>{{a.marks}}</td>
+</tr>
+</table>
+<button type="button" ng-click="deleteFunc()">Delete</button>
+
+<button type="button" ng-click="populate()">Populate</button>
+
+<button type="button" ng-click="update()">Save Update</button>
+</div>
+
+
+
+
+<div ng-controller = "insertController">
+<form  method="post" ng-submit="submitForm()">
+ Student Name: <input type="text" id="name" name="name" ng-model="message.name"><br><br>
+ Student ID: <input type="text" id="author" name="author" ng-model="message.id"><br><br>
+ Student Age: <input type="text" id="author" name="author" ng-model="message.age"><br><br>
+ Student Marks: <input type="text" id="author" name="author" ng-model="message.marks"><br><br>
+    <input type="submit">
+
+
+</form>
+
+</div>
+
+
+
+</body>
+</html>
